@@ -1,8 +1,12 @@
-# Sign Language Data Collection GUI
+# Multi-Sensor Activity Data Collection GUI
 
-A multi-sensor data collection GUI for sign language research.  Synchronises a **TI AWR2243BOOST 77 GHz radar** and an **Azure Kinect RGB-D camera** to capture labelled activity recordings.  Each session shows a per-activity demonstration video before capture, and saves data in a clean experiment → subject → activity folder hierarchy.
+A modular, multi-sensor data collection GUI for labelled activity research.  Synchronises a **TI AWR2243BOOST 77 GHz radar** and an **Azure Kinect RGB-D camera** to capture recordings of any activity.  Each session shows a per-activity demonstration video before capture, and saves data in a clean experiment → subject → activity folder hierarchy.
 
 > **Infineon 60 GHz radar** support is in progress — the module stub is already in place.
+
+---
+
+![GUI Screenshot](data/gui.png)
 
 ---
 
