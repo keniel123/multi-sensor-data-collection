@@ -1,8 +1,24 @@
 # Multi-Sensor Activity Data Collection GUI
 
-A modular, multi-sensor data collection GUI for labelled activity research.  Synchronises a **TI AWR2243BOOST 77 GHz radar** and an **Azure Kinect RGB-D camera** to capture recordings of any activity.  Each session shows a per-activity demonstration video before capture, and saves data in a clean experiment → subject → activity folder hierarchy.
+A modular, multi-sensor data collection GUI for labelled activity research. It synchronises a **TI AWR2243BOOST 77 GHz radar** and an **Azure Kinect RGB-D camera** to capture recordings of any activity.
+
+Each session:
+- shows a per-activity demonstration video before capture
+- saves data in an experiment → subject → activity folder hierarchy
 
 > **Infineon 60 GHz radar** support is in progress — the module stub is already in place.
+
+## Quick start (Windows)
+
+1. Install mmWave Studio + Azure Kinect SDK (see below)
+2. `pip install -r requirements.txt`
+3. Update paths in `sensors/kinect_azure.py` and `cf.json`
+4. Start mmWave Studio and run `radar_server.lua`
+5. Run the GUI:
+
+```bash
+python main.py
+```
 
 ---
 
