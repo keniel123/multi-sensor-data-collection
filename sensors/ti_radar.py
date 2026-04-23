@@ -15,11 +15,28 @@ Usage:
     rc, log = rec.wait()
 """
 
+import platform
+import re
 import socket
+import subprocess
 import threading
 import xml.etree.ElementTree as ET
 
-RADAR_SERVER_HOST = '127.0.0.1'
+
+def _radar_host() -> str:
+    """Return Windows host IP when running in WSL, else 127.0.0.1."""
+    if 'microsoft' in platform.uname().release.lower():
+        try:
+            out = subprocess.check_output(['cat', '/etc/resolv.conf'], text=True)
+            m = re.search(r'nameserver\s+(\S+)', out)
+            if m:
+                return m.group(1)
+        except Exception:
+            pass
+    return '127.0.0.1'
+
+
+RADAR_SERVER_HOST = _radar_host()
 RADAR_SERVER_PORT = 55000
 
 # Fallback values used only if the mmWave Studio config XML cannot be read.

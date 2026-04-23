@@ -129,14 +129,14 @@ _initial_preview = load_preview(activities[0]) if activities else _blank_frame()
 demo_frame = sg.Frame('Demonstration', [
     [sg.Image(data=_initial_preview, key='-VIDEO-', size=(PREVIEW_W, PREVIEW_H))],
     [
-        sg.Button('◀  Prev', key='prev_activity', font=FONT_BTN, size=(10, 1), button_color=BTN_DARK),
-        sg.Button('▶  Play', key='play_video',    font=FONT_BTN, size=(10, 1), button_color=BTN_BLUE),
-        sg.Button('Next  ▶', key='next_activity', font=FONT_BTN, size=(10, 1), button_color=BTN_DARK),
+        sg.Button('< Prev', key='prev_activity', font=FONT_BTN, size=(10, 1), button_color=BTN_DARK),
+        sg.Button('Play', key='play_video',    font=FONT_BTN, size=(10, 1), button_color=BTN_BLUE),
+        sg.Button('Next >', key='next_activity', font=FONT_BTN, size=(10, 1), button_color=BTN_DARK),
     ],
 ], font=FONT_LABEL, pad=(8, 8))
 
 status_frame = sg.Frame('Status', [
-    [sg.Text('●  Ready', key='status_text', font=FONT_LABEL, size=(50, 2),
+    [sg.Text('Ready', key='status_text', font=FONT_LABEL, size=(50, 2),
              text_color='#4caf50')],
     [
         sg.Text('', key='rec_indicator', font=('Helvetica', 11, 'bold'),
@@ -157,8 +157,8 @@ layout = [
     [sg.HorizontalSeparator(pad=(0, 6))],
     [
         sg.Button('Setup Radar',          key='Setup Radar',         font=FONT_BTN, size=(16, 2), button_color=BTN_DARK),
-        sg.Button('▶  Start Recording',   key='1. Start Recording',  font=FONT_BTN, size=(20, 2), button_color=BTN_GREEN),
-        sg.Button('■  Stop Recording',    key='2. Stop Recording',   font=FONT_BTN, size=(18, 2), button_color=BTN_RED,
+        sg.Button('Start Recording',   key='1. Start Recording',  font=FONT_BTN, size=(20, 2), button_color=BTN_GREEN),
+        sg.Button('Stop Recording',    key='2. Stop Recording',   font=FONT_BTN, size=(18, 2), button_color=BTN_RED,
                   disabled=True),
         sg.Push(),
         sg.Exit(font=FONT_BTN, size=(10, 2), button_color=BTN_DARK),
@@ -295,7 +295,7 @@ def _run_recording(values, save_dir: str, ts: str, duration_s: int):
     if errors:
         window.write_event_value('-STATUS-', (f'⚠  Errors: {", ".join(errors)}', '#ef5350'))
     else:
-        window.write_event_value('-STATUS-', ('●  Recording saved', '#4caf50'))
+        window.write_event_value('-STATUS-', ('Recording saved', '#4caf50'))
     window.write_event_value('-RECORD-DONE-', None)
     _recording = False
 
@@ -322,7 +322,7 @@ while True:
 
     elif event == 'play_video':
         name = _activity_name(values['class_list'])
-        set_status(f'▶  Play: {name}  (video playback coming soon)', '#ffb74d')
+        set_status(f'Play: {name}  (video playback coming soon)', '#ffb74d')
 
     # ── Background thread → GUI events ────────────────────────────────────────
     elif event == '-TIMER-':
@@ -347,7 +347,7 @@ while True:
         set_status('⟳  Connecting to radar Lua server...', '#ffb74d')
         resp = ti_radar._send('setup', timeout=15)
         if resp == 'setup_ok':
-            set_status('●  Radar ready', '#4caf50')
+            set_status('Radar ready', '#4caf50')
         else:
             set_status(f'⚠  {resp}', '#ef5350')
 
@@ -398,6 +398,6 @@ while True:
             _set_buttons(recording=False)
             _set_rec_indicator('')
             _set_timer('')
-            set_status('■  Stopped by user', '#ffb74d')
+            set_status('Stopped by user', '#ffb74d')
 
 window.close()

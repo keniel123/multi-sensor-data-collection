@@ -76,7 +76,9 @@ function recordData(filepath, duration_ms, frame_period_ms, loop_count)
         end
         WriteToLog(string.format("Setting num_frames=%d  period=%.1fms  loopCount=%d\n",
                                  num_frames, frame_period_ms, loops), "blue")
-        ar1.FrameConfig(0, 0, loops, num_frames, frame_period_ms, 0, 0)
+        -- arg3 = total frame count (→ AdvancedFrameConfig numOfFrames)
+        -- arg4 = chirps per frame  (→ AdvancedFrameConfig numLoops per subframe)
+        ar1.FrameConfig(0, 0, num_frames, loops, frame_period_ms, 0, 0)
     end
 
     -- Arm DCA and set output filename
@@ -92,8 +94,8 @@ function recordData(filepath, duration_ms, frame_period_ms, loop_count)
         return -1
     end
 
-    -- Wait for the requested duration
-    RSTD.Sleep(duration_ms)
+    -- Wait for radar to finish all frames (duration + 1 s buffer for last frame)
+    RSTD.Sleep(duration_ms + 1000)
 
     -- Stop frame transmission — frame may have already ended naturally, so use pcall
     local ok, err = pcall(ar1.StopFrame)
