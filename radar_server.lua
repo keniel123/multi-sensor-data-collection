@@ -82,10 +82,13 @@ function recordData(filepath, duration_ms, frame_period_ms, loop_count)
     end
 
     -- Arm DCA and set output filename
+    WriteToLog("Calling CaptureCardConfig_StartRecord...\n", "blue")
     ar1.CaptureCardConfig_StartRecord(filepath, 1)
+    WriteToLog("StartRecord armed, sleeping 500ms...\n", "blue")
     RSTD.Sleep(500)
 
     -- Start radar frame transmission
+    WriteToLog("Calling StartFrame...\n", "blue")
     local ret = ar1.StartFrame()
     if ret == 0 then
         WriteToLog("StartFrame OK\n", "green")

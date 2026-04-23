@@ -20,6 +20,7 @@ import re
 import socket
 import subprocess
 import threading
+import time
 import xml.etree.ElementTree as ET
 
 
@@ -127,8 +128,12 @@ class TIRadarRecorder:
 
         self._result = [None]
 
-        def _worker(c=cmd, tmo=duration_s + 15):
-            self._result[0] = self._send(c, timeout=tmo)
+        def _worker(c=cmd, tmo=duration_s + 90):
+            t0 = time.time()
+            print(f'[TIRadar] Waiting for Lua server (timeout {tmo}s)...')
+            result = self._send(c, timeout=tmo)
+            print(f'[TIRadar] Lua responded after {time.time()-t0:.1f}s')
+            self._result[0] = result
 
         self._thread = threading.Thread(target=_worker, daemon=True)
         self._thread.start()
