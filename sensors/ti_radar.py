@@ -41,13 +41,20 @@ RADAR_SERVER_HOST = _radar_host()
 RADAR_SERVER_PORT = 55000
 
 # Fallback values used only if the mmWave Studio config XML cannot be read.
-_DEFAULT_FRAME_PERIOD_MS = 30   # config5: periodicity=30ms → 33.33 fps
-_DEFAULT_LOOP_COUNT      = 255  # config5: loopCount=255 chirps per frame
+# These match the AdvancedFrameConfig defaults (sb1subFramePeriod / sb1numOfLoops).
+_DEFAULT_FRAME_PERIOD_MS = 40   # ms — matches AdvancedFrameConfig sb1subFramePeriod
+_DEFAULT_LOOP_COUNT      = 128  # chirps/frame — matches AdvancedFrameConfig sb1numOfLoops
 
 
 def _parse_mmwave_config(config_path: str) -> tuple[float, int]:
     """
     Read frame periodicity (ms) and loop count from a mmWave Studio XML config.
+
+    mmWave Studio's actual hardware configuration comes from apiname_advanceframe_cfg
+    (sb1subFramePeriod, sb1numOfLoops), NOT from apiname_frame_cfg (periodicity,
+    loopCount).  Using the wrong fields causes a "Frame duration less than needed"
+    error dialog and blocks the Lua thread for minutes.
+
     Returns (frame_period_ms, loop_count) or the defaults on any error.
     """
     try:
@@ -58,11 +65,18 @@ def _parse_mmwave_config(config_path: str) -> tuple[float, int]:
             node = root.find(f'.//{section}/param[@name="{name}"]')
             return node.attrib['value'] if node is not None else None
 
-        period    = get('apiname_frame_cfg', 'periodicity')
-        loopcount = get('apiname_frame_cfg', 'loopCount')
+        # Primary: read from AdvancedFrameConfig — what the hardware actually uses
+        period    = get('apiname_advanceframe_cfg', 'sb1subFramePeriod')
+        loopcount = get('apiname_advanceframe_cfg', 'sb1numOfLoops')
 
-        frame_period_ms = float(period)    if period    is not None else _DEFAULT_FRAME_PERIOD_MS
-        loop_count      = int(loopcount)   if loopcount is not None else _DEFAULT_LOOP_COUNT
+        # Fallback: basic frame config (only if advanced section absent)
+        if period is None:
+            period = get('apiname_frame_cfg', 'periodicity')
+        if loopcount is None:
+            loopcount = get('apiname_frame_cfg', 'loopCount')
+
+        frame_period_ms = float(period)  if period    is not None else _DEFAULT_FRAME_PERIOD_MS
+        loop_count      = int(loopcount) if loopcount is not None else _DEFAULT_LOOP_COUNT
 
         print(f'[TIRadar] Config loaded from {config_path}: '
               f'periodicity={frame_period_ms}ms, loopCount={loop_count}')

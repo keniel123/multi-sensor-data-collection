@@ -78,7 +78,13 @@ function recordData(filepath, duration_ms, frame_period_ms, loop_count)
                                  num_frames, frame_period_ms, loops), "blue")
         -- arg3 = total frame count (→ AdvancedFrameConfig numOfFrames)
         -- arg4 = chirps per frame  (→ AdvancedFrameConfig numLoops per subframe)
-        ar1.FrameConfig(0, 0, num_frames, loops, frame_period_ms, 0, 0)
+        -- period must be >= loops * chirp_time or Studio pops an error dialog
+        local fc_ret = ar1.FrameConfig(0, 0, num_frames, loops, frame_period_ms, 0, 0)
+        WriteToLog("FrameConfig done (ret=" .. tostring(fc_ret) .. ")\n", "blue")
+        if fc_ret ~= 0 then
+            WriteToLog("FrameConfig FAILED — period too short for this loop count?\n", "red")
+            return -1
+        end
     end
 
     -- Arm DCA and set output filename
@@ -143,12 +149,16 @@ while true do
                 local loop_count      = tonumber(parts[5])
 
                 if filepath and duration_ms then
-                    local ok, err = pcall(recordData, filepath, duration_ms, frame_period_ms, loop_count)
-                    if ok then
+                    local ok, ret = pcall(recordData, filepath, duration_ms, frame_period_ms, loop_count)
+                    if ok and ret == 0 then
                         client:send("record_done\n")
+                    elseif ok then
+                        -- recordData returned a non-zero error code (no Lua exception)
+                        WriteToLog("recordData returned error code: " .. tostring(ret) .. "\n", "red")
+                        client:send("record_error: code " .. tostring(ret) .. "\n")
                     else
-                        WriteToLog("recordData error: " .. tostring(err) .. "\n", "red")
-                        client:send("record_error: " .. tostring(err) .. "\n")
+                        WriteToLog("recordData exception: " .. tostring(ret) .. "\n", "red")
+                        client:send("record_error: " .. tostring(ret) .. "\n")
                     end
                 else
                     WriteToLog("Bad record params: " .. line .. "\n", "red")
