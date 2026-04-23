@@ -69,8 +69,8 @@ function recordData(filepath, duration_ms, frame_period_ms, loop_count)
         local loops      = loop_count or 255
         WriteToLog(string.format("Setting num_frames=%d  period=%.1fms  loopCount=%d\n",
                                  num_frames, frame_period_ms, loops), "blue")
-        -- triggerSelect=1: software trigger so ar1.StartFrame() works
-        ar1.FrameConfig(0, 0, loops, num_frames, frame_period_ms, 1, 0)
+        -- triggerSelect=0 matches config5 and keeps StopFrame() working
+        ar1.FrameConfig(0, 0, loops, num_frames, frame_period_ms, 0, 0)
     end
 
     -- Arm DCA and set output filename
