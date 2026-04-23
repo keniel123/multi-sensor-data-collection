@@ -257,11 +257,19 @@ def _run_recording(values, save_dir: str, ts: str, duration_s: int):
     base = os.path.join(save_dir, ts)
 
     # ── Start sensors ──────────────────────────────────────────────────────────
+    kinect_active = values['azure_kinect_check'] and _kinect_available
+
     if values['azure_kinect_check']:
         if _kinect_available:
-            kinect.start(base + '_kinect.mkv', duration_s)
+            # +3 s: covers k4arecorder initialisation latency (~1-2 s) so the
+            # Kinect window fully contains the radar window.
+            kinect.start(base + '_kinect.mkv', duration_s + 3)
         else:
             window.write_event_value('-STATUS-', ('⚠  k4arecorder.exe not found', '#ef5350'))
+
+    # 1 s stagger: let Kinect begin initialising before radar arms.
+    if kinect_active and values['77_front_check']:
+        time.sleep(1)
 
     if values['77_front_check']:
         ti_radar.start(base + '.bin', duration_s)
