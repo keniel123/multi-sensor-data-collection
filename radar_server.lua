@@ -67,7 +67,8 @@ function recordData(filepath, duration_ms, frame_period_ms)
         local num_frames = math.ceil(duration_ms / frame_period_ms)
         WriteToLog("Setting num_frames = " .. num_frames ..
                    "  (period=" .. frame_period_ms .. " ms)\n", "blue")
-        ar1.FrameConfig(0, 0, 1, num_frames, frame_period_ms, 1, 0)
+        -- loopCount=255 matches config5; triggerSelect=1 = software trigger (StartFrame)
+        ar1.FrameConfig(0, 0, 255, num_frames, frame_period_ms, 1, 0)
     end
 
     -- Arm DCA and set output filename

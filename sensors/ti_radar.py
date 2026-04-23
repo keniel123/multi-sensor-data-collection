@@ -22,9 +22,8 @@ import threading
 RADAR_SERVER_HOST = '127.0.0.1'
 RADAR_SERVER_PORT = 55000
 
-# Frame period in ms from mmWave Studio FrameConfig.
-# e.g. 50 ms → 20 fps.  Must match what is configured in config5 (or whichever config is loaded).
-FRAME_PERIOD_MS = 50
+# Frame period in ms from mmWave Studio FrameConfig (config5: periodicity=30ms → 33.33 fps).
+FRAME_PERIOD_MS = 30
 
 
 class TIRadarRecorder:
