@@ -63,13 +63,19 @@ function recordData(filepath, duration_ms, frame_period_ms, loop_count)
     WriteToLog("Recording -> " .. filepath .. "  (" .. duration_ms .. " ms)\n", "blue")
 
     -- Dynamically set frame count so the radar runs for exactly duration_ms.
-    -- Without this the radar stops at whatever frame count was set in mmWave Studio.
+    -- mmWave Studio caps numFrames at 300 (= 9 s at 30 ms period).
+    -- For longer recordings reduce the frame period in config5 (fewer fps).
+    local MAX_FRAMES = 300
     if frame_period_ms and frame_period_ms > 0 then
-        local num_frames = math.ceil(duration_ms / frame_period_ms)
+        local num_frames = math.min(math.ceil(duration_ms / frame_period_ms), MAX_FRAMES)
         local loops      = loop_count or 255
+        local actual_ms  = num_frames * frame_period_ms
+        if actual_ms < duration_ms then
+            WriteToLog(string.format("WARNING: duration capped at %.0f ms (%d frames × %.1f ms)  — max is %d frames\n",
+                                     actual_ms, num_frames, frame_period_ms, MAX_FRAMES), "red")
+        end
         WriteToLog(string.format("Setting num_frames=%d  period=%.1fms  loopCount=%d\n",
                                  num_frames, frame_period_ms, loops), "blue")
-        -- triggerSelect=0 matches config5 and keeps StopFrame() working
         ar1.FrameConfig(0, 0, loops, num_frames, frame_period_ms, 0, 0)
     end
 
