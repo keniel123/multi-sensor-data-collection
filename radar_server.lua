@@ -56,19 +56,21 @@ function setupDCA()
 end
 
 -- ── Record: arm DCA → trigger frame → wait → stop ────────────────────────────
--- frame_period_ms: time between frames in ms (from mmWave Studio FrameConfig).
---   e.g. 50 ms → 20 fps.  Pass 0 to skip dynamic frame-count override.
-function recordData(filepath, duration_ms, frame_period_ms)
+-- frame_period_ms: time between frames in ms (read from config XML by Python).
+-- loop_count:      chirps per frame (read from config XML by Python).
+-- Both are optional; omit to skip dynamic frame-count override.
+function recordData(filepath, duration_ms, frame_period_ms, loop_count)
     WriteToLog("Recording -> " .. filepath .. "  (" .. duration_ms .. " ms)\n", "blue")
 
     -- Dynamically set frame count so the radar runs for exactly duration_ms.
     -- Without this the radar stops at whatever frame count was set in mmWave Studio.
     if frame_period_ms and frame_period_ms > 0 then
         local num_frames = math.ceil(duration_ms / frame_period_ms)
-        WriteToLog("Setting num_frames = " .. num_frames ..
-                   "  (period=" .. frame_period_ms .. " ms)\n", "blue")
-        -- loopCount=255 matches config5; triggerSelect=1 = software trigger (StartFrame)
-        ar1.FrameConfig(0, 0, 255, num_frames, frame_period_ms, 1, 0)
+        local loops      = loop_count or 255
+        WriteToLog(string.format("Setting num_frames=%d  period=%.1fms  loopCount=%d\n",
+                                 num_frames, frame_period_ms, loops), "blue")
+        -- triggerSelect=1: software trigger so ar1.StartFrame() works
+        ar1.FrameConfig(0, 0, loops, num_frames, frame_period_ms, 1, 0)
     end
 
     -- Arm DCA and set output filename
@@ -120,16 +122,17 @@ while true do
                 client:send(status == 0 and "setup_ok\n" or "setup_error\n")
 
             elseif cmd == "record" then
-                -- format: record|C:\full\path\file.bin|duration_ms|frame_period_ms
-                -- frame_period_ms is optional (omit to skip dynamic frame count)
+                -- format: record|C:\full\path\file.bin|duration_ms|frame_period_ms|loop_count
+                -- frame_period_ms and loop_count are read from the mmWave config XML by Python
                 local parts = {}
                 for p in line:gmatch("[^|]+") do parts[#parts+1] = p end
                 local filepath        = parts[2]
                 local duration_ms     = tonumber(parts[3])
-                local frame_period_ms = tonumber(parts[4])  -- optional
+                local frame_period_ms = tonumber(parts[4])
+                local loop_count      = tonumber(parts[5])
 
                 if filepath and duration_ms then
-                    local ok, err = pcall(recordData, filepath, duration_ms, frame_period_ms)
+                    local ok, err = pcall(recordData, filepath, duration_ms, frame_period_ms, loop_count)
                     if ok then
                         client:send("record_done\n")
                     else

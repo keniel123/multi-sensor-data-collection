@@ -28,9 +28,11 @@ DATA_DIR      = os.path.join(_SCRIPT_DIR, 'data')
 # capturesync queue overflows.  Fall back to the script dir on non-Windows.
 import platform as _platform
 if _platform.system() == 'Windows':
-    OUTPUTS_DIR = os.path.join(os.path.expanduser('~'), 'radar_data', 'outputs')
+    OUTPUTS_DIR      = os.path.join(os.path.expanduser('~'), 'radar_data', 'outputs')
+    MMWAVE_CONFIG    = os.path.join(os.path.expanduser('~'), 'Downloads', 'config5.xml')
 else:
-    OUTPUTS_DIR = os.path.join(_SCRIPT_DIR, 'outputs')
+    OUTPUTS_DIR      = os.path.join(_SCRIPT_DIR, 'outputs')
+    MMWAVE_CONFIG    = None
 
 PREVIEW_W, PREVIEW_H = 640, 360
 
@@ -174,7 +176,7 @@ except FileNotFoundError as e:
     _kinect_available = False
     print(f'[Warning] {e}')
 
-ti_radar  = TIRadarRecorder()
+ti_radar  = TIRadarRecorder(mmwave_config=MMWAVE_CONFIG)
 inf_radar = InfineonRadarRecorder()
 
 # ── State ──────────────────────────────────────────────────────────────────────
