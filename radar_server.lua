@@ -11,7 +11,7 @@
 
     COMMANDS (sent as newline-terminated strings over TCP 127.0.0.1:55000):
       "setup"                            -> configure DCA1000 Ethernet/mode
-      "record|C:\path\to\file.bin|5000"  -> arm DCA, trigger frame, wait 5000ms, stop
+      "record|C:\path\to\file.bin|5000|50"  -> arm DCA, set frame count (5000ms/50ms=100 frames), trigger, wait, stop
       "ping"                             -> health check, returns "pong"
 --]]
 
@@ -56,8 +56,19 @@ function setupDCA()
 end
 
 -- ── Record: arm DCA → trigger frame → wait → stop ────────────────────────────
-function recordData(filepath, duration_ms)
+-- frame_period_ms: time between frames in ms (from mmWave Studio FrameConfig).
+--   e.g. 50 ms → 20 fps.  Pass 0 to skip dynamic frame-count override.
+function recordData(filepath, duration_ms, frame_period_ms)
     WriteToLog("Recording -> " .. filepath .. "  (" .. duration_ms .. " ms)\n", "blue")
+
+    -- Dynamically set frame count so the radar runs for exactly duration_ms.
+    -- Without this the radar stops at whatever frame count was set in mmWave Studio.
+    if frame_period_ms and frame_period_ms > 0 then
+        local num_frames = math.ceil(duration_ms / frame_period_ms)
+        WriteToLog("Setting num_frames = " .. num_frames ..
+                   "  (period=" .. frame_period_ms .. " ms)\n", "blue")
+        ar1.FrameConfig(0, 0, 1, num_frames, frame_period_ms, 1, 0)
+    end
 
     -- Arm DCA and set output filename
     ar1.CaptureCardConfig_StartRecord(filepath, 1)
@@ -108,12 +119,16 @@ while true do
                 client:send(status == 0 and "setup_ok\n" or "setup_error\n")
 
             elseif cmd == "record" then
-                -- format: record|C:\full\path\file.bin|duration_ms
-                local filepath    = line:match("^[^|]+|(.+)|[^|]+$")
-                local duration_ms = tonumber(line:match("|([^|]+)$"))
+                -- format: record|C:\full\path\file.bin|duration_ms|frame_period_ms
+                -- frame_period_ms is optional (omit to skip dynamic frame count)
+                local parts = {}
+                for p in line:gmatch("[^|]+") do parts[#parts+1] = p end
+                local filepath        = parts[2]
+                local duration_ms     = tonumber(parts[3])
+                local frame_period_ms = tonumber(parts[4])  -- optional
 
                 if filepath and duration_ms then
-                    local ok, err = pcall(recordData, filepath, duration_ms)
+                    local ok, err = pcall(recordData, filepath, duration_ms, frame_period_ms)
                     if ok then
                         client:send("record_done\n")
                     else

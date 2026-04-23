@@ -22,6 +22,10 @@ import threading
 RADAR_SERVER_HOST = '127.0.0.1'
 RADAR_SERVER_PORT = 55000
 
+# Frame period in ms from mmWave Studio FrameConfig.
+# e.g. 50 ms → 20 fps.  Must match what is configured in config5 (or whichever config is loaded).
+FRAME_PERIOD_MS = 50
+
 
 class TIRadarRecorder:
     """
@@ -50,18 +54,20 @@ class TIRadarRecorder:
         """Return True if the Lua server is reachable."""
         return self._send('ping', timeout=3) == 'pong'
 
-    def start(self, output_path: str, duration_s: int):
+    def start(self, output_path: str, duration_s: int, frame_period_ms: int = FRAME_PERIOD_MS):
         """
         Arm DCA1000 and trigger radar frame in a background thread.
         Returns immediately — call wait() to block until done.
 
         Args:
-            output_path: Full Windows path for the .bin file
-                         (DCA strips .bin and appends _Raw_0.bin automatically).
-            duration_s:  Recording length in seconds.
+            output_path:     Full Windows path for the .bin file.
+            duration_s:      Recording length in seconds.
+            frame_period_ms: Frame period from mmWave Studio FrameConfig (ms).
+                             Used to compute exact frame count so the radar
+                             stops at duration_s, not at the Studio-configured count.
         """
         duration_ms = duration_s * 1000
-        cmd = f'record|{output_path}|{duration_ms}'
+        cmd = f'record|{output_path}|{duration_ms}|{frame_period_ms}'
         print(f'[TIRadar] Starting: {cmd}')
 
         self._result = [None]
