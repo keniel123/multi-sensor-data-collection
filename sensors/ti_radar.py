@@ -41,19 +41,20 @@ RADAR_SERVER_HOST = _radar_host()
 RADAR_SERVER_PORT = 55000
 
 # Fallback values used only if the mmWave Studio config XML cannot be read.
-# These match the AdvancedFrameConfig defaults (sb1subFramePeriod / sb1numOfLoops).
-_DEFAULT_FRAME_PERIOD_MS = 40   # ms — matches AdvancedFrameConfig sb1subFramePeriod
-_DEFAULT_LOOP_COUNT      = 128  # chirps/frame — matches AdvancedFrameConfig sb1numOfLoops
+_DEFAULT_FRAME_PERIOD_MS = 30   # ms — matches apiname_frame_cfg periodicity
+_DEFAULT_LOOP_COUNT      = 255  # chirps/frame — matches apiname_frame_cfg loopCount
 
 
 def _parse_mmwave_config(config_path: str) -> tuple[float, int]:
     """
     Read frame periodicity (ms) and loop count from a mmWave Studio XML config.
 
-    mmWave Studio's actual hardware configuration comes from apiname_advanceframe_cfg
-    (sb1subFramePeriod, sb1numOfLoops), NOT from apiname_frame_cfg (periodicity,
-    loopCount).  Using the wrong fields causes a "Frame duration less than needed"
-    error dialog and blocks the Lua thread for minutes.
+    Reads from apiname_frame_cfg (periodicity, loopCount) — the values visible
+    in the mmWave Studio FrameConfig panel and expected by the processing pipeline.
+
+    NOTE: if ar1.FrameConfig raises a "Frame duration less than needed" error
+    in mmWave Studio, the period is too short for the given loop count (hardware
+    minimum for 255 loops is ~40.8 ms).  Increase periodicity in config5.xml.
 
     Returns (frame_period_ms, loop_count) or the defaults on any error.
     """
@@ -65,15 +66,8 @@ def _parse_mmwave_config(config_path: str) -> tuple[float, int]:
             node = root.find(f'.//{section}/param[@name="{name}"]')
             return node.attrib['value'] if node is not None else None
 
-        # Primary: read from AdvancedFrameConfig — what the hardware actually uses
-        period    = get('apiname_advanceframe_cfg', 'sb1subFramePeriod')
-        loopcount = get('apiname_advanceframe_cfg', 'sb1numOfLoops')
-
-        # Fallback: basic frame config (only if advanced section absent)
-        if period is None:
-            period = get('apiname_frame_cfg', 'periodicity')
-        if loopcount is None:
-            loopcount = get('apiname_frame_cfg', 'loopCount')
+        period    = get('apiname_frame_cfg', 'periodicity')
+        loopcount = get('apiname_frame_cfg', 'loopCount')
 
         frame_period_ms = float(period)  if period    is not None else _DEFAULT_FRAME_PERIOD_MS
         loop_count      = int(loopcount) if loopcount is not None else _DEFAULT_LOOP_COUNT
